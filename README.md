@@ -2,6 +2,8 @@
 
 A small fork of Zellij's built-in `compact-bar` plugin for a cleaner top bar.
 
+![compact-top-plus screenshot](screenshot.png)
+
 It keeps the original compact-bar keybind helper behavior while changing the visible bar:
 
 - Shows `[session-name]` on the left instead of `Zellij (session-name)`.
