@@ -1,5 +1,5 @@
 use ansi_term::ANSIStrings;
-use chrono::{FixedOffset, Utc};
+use chrono::{Duration, Utc};
 use unicode_width::UnicodeWidthStr;
 
 use crate::{LinePart, TabRenderData, ARROW_SEPARATOR};
@@ -398,8 +398,7 @@ impl RightSideElementsBuilder {
     }
 
     fn create_time_indicator(&self) -> LinePart {
-        let moscow_offset = FixedOffset::east_opt(3 * 60 * 60).expect("valid Moscow UTC offset");
-        let time_text = format!(" {}", Utc::now().with_timezone(&moscow_offset).format("%H:%M"));
+        let time_text = format!(" {}", (Utc::now() + Duration::hours(3)).format("%H:%M"));
         let colors = IndicatorColors {
             text: self.palette.text_unselected.base,
             background: self.palette.text_unselected.background,

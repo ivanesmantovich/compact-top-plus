@@ -26,7 +26,7 @@ git clone git@github.com:ivanesmantovich/compact-top-plus.git
 cd compact-top-plus
 cargo build --release --target wasm32-wasip1
 mkdir -p ~/.config/zellij/plugins
-cp target/wasm32-wasip1/release/compact-top-plus.wasm ~/.config/zellij/plugins/compact-top-plus.wasm
+command cp -f target/wasm32-wasip1/release/compact-top-plus.wasm ~/.config/zellij/plugins/compact-top-plus.wasm
 ```
 
 ## Install Prebuilt Wasm From This Repo
@@ -35,7 +35,7 @@ If you trust the checked-in wasm, copy it directly:
 
 ```sh
 mkdir -p ~/.config/zellij/plugins
-cp compact-top-plus.wasm ~/.config/zellij/plugins/compact-top-plus.wasm
+command cp -f compact-top-plus.wasm ~/.config/zellij/plugins/compact-top-plus.wasm
 ```
 
 ## Zellij Configuration
