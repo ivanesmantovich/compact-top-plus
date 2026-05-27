@@ -21,7 +21,7 @@ It keeps the original compact-bar keybind helper behavior while changing the vis
 rustup target add wasm32-wasip1
 ```
 
-## Install From Source
+## Install
 
 ```sh
 git clone git@github.com:ivanesmantovich/compact-bar-plus.git
@@ -29,15 +29,6 @@ cd compact-bar-plus
 cargo build --release --target wasm32-wasip1
 mkdir -p ~/.config/zellij/plugins
 command cp -f target/wasm32-wasip1/release/compact-bar-plus.wasm ~/.config/zellij/plugins/compact-bar-plus.wasm
-```
-
-## Install Prebuilt Wasm From This Repo
-
-If you trust the checked-in wasm, copy it directly:
-
-```sh
-mkdir -p ~/.config/zellij/plugins
-command cp -f compact-bar-plus.wasm ~/.config/zellij/plugins/compact-bar-plus.wasm
 ```
 
 ## Zellij Configuration

@@ -308,7 +308,7 @@ impl TabLinePrefixBuilder {
     }
 
     fn create_session_name_part(&self, name: &str, used_len: usize) -> Option<LinePart> {
-        let name_part = format!("[{}] ", name);
+        let name_part = format!("[{}]", name);
         let name_part_len = name_part.width();
 
         if self.cols.saturating_sub(used_len) >= name_part_len {
