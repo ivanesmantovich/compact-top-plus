@@ -1,8 +1,8 @@
-# compact-top-plus
+# compact-bar-plus
 
 A small fork of Zellij's built-in `compact-bar` plugin for a cleaner top bar.
 
-![compact-top-plus screenshot](screenshot.png)
+![compact-bar-plus screenshot](screenshot.png)
 
 It keeps the original compact-bar keybind helper behavior while changing the visible bar:
 
@@ -24,11 +24,11 @@ rustup target add wasm32-wasip1
 ## Install From Source
 
 ```sh
-git clone git@github.com:ivanesmantovich/compact-top-plus.git
-cd compact-top-plus
+git clone git@github.com:ivanesmantovich/compact-bar-plus.git
+cd compact-bar-plus
 cargo build --release --target wasm32-wasip1
 mkdir -p ~/.config/zellij/plugins
-command cp -f target/wasm32-wasip1/release/compact-top-plus.wasm ~/.config/zellij/plugins/compact-top-plus.wasm
+command cp -f target/wasm32-wasip1/release/compact-bar-plus.wasm ~/.config/zellij/plugins/compact-bar-plus.wasm
 ```
 
 ## Install Prebuilt Wasm From This Repo
@@ -37,7 +37,7 @@ If you trust the checked-in wasm, copy it directly:
 
 ```sh
 mkdir -p ~/.config/zellij/plugins
-command cp -f compact-top-plus.wasm ~/.config/zellij/plugins/compact-top-plus.wasm
+command cp -f compact-bar-plus.wasm ~/.config/zellij/plugins/compact-bar-plus.wasm
 ```
 
 ## Zellij Configuration
@@ -46,7 +46,7 @@ Add or replace the `compact-bar` alias in `~/.config/zellij/config.kdl`:
 
 ```kdl
 plugins {
-    compact-bar location="file:/home/YOUR_USER/.config/zellij/plugins/compact-top-plus.wasm" {
+    compact-bar location="file:/home/YOUR_USER/.config/zellij/plugins/compact-bar-plus.wasm" {
         tooltip "F1"
     }
 }
