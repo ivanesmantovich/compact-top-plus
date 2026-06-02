@@ -99,6 +99,7 @@ impl ZellijPlugin for State {
     fn update(&mut self, event: Event) -> bool {
         if let Event::PermissionRequestResult(PermissionStatus::Granted) = event {
             self.got_permissions = true;
+            set_selectable(false);
 
             while !self.pending_events.is_empty() {
                 let ev = self.pending_events.pop();
@@ -160,8 +161,6 @@ impl State {
     }
 
     fn setup_subscriptions(&self) {
-        set_selectable(false);
-
         let events = if self.is_tooltip {
             vec![
                 EventType::ModeUpdate,
