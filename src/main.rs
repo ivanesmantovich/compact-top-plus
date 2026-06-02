@@ -64,6 +64,10 @@ struct State {
 
     // Keybinding cache
     cached_keybinds: KeybindsVec,
+
+    // Permission gate
+    got_permissions: bool,
+    pending_events: Vec<Event>,
 }
 
 struct TabRenderData {
@@ -93,6 +97,120 @@ impl ZellijPlugin for State {
     }
 
     fn update(&mut self, event: Event) -> bool {
+        if let Event::PermissionRequestResult(PermissionStatus::Granted) = event {
+            self.got_permissions = true;
+
+            while !self.pending_events.is_empty() {
+                let ev = self.pending_events.pop();
+                self.handle_update_event(ev.unwrap());
+            }
+        }
+
+        if !self.got_permissions {
+            self.pending_events.push(event);
+            return false;
+        }
+
+        self.handle_update_event(event)
+    }
+
+    fn pipe(&mut self, message: PipeMessage) -> bool {
+        if self.is_tooltip && message.is_private {
+            self.handle_tooltip_pipe(message);
+        } else if message.name == MSG_TOGGLE_TOOLTIP
+            && message.is_private
+            && self.toggle_tooltip_key.is_some()
+            // only launch once per plugin instance
+            && self.own_tab_index == Some(self.active_tab_idx.saturating_sub(1))
+            // only launch once per client of plugin instance
+            && Some(format!("{}", self.own_client_id)) == message.payload
+        {
+            self.toggle_persisted_tooltip(self.mode_info.mode);
+        }
+        false
+    }
+
+    fn render(&mut self, rows: usize, cols: usize) {
+        if !self.got_permissions {
+            return;
+        }
+
+        if self.is_tooltip {
+            self.render_tooltip(rows, cols);
+        } else {
+            self.render_tab_line(cols);
+        }
+    }
+}
+
+impl State {
+    fn initialize_configuration(&mut self, configuration: BTreeMap<String, String>) {
+        self.config = configuration.clone();
+        self.is_tooltip = self.parse_bool_config(CONFIG_IS_TOOLTIP, false);
+
+        if !self.is_tooltip {
+            if let Some(tooltip_toggle_key) = configuration.get(CONFIG_TOGGLE_TOOLTIP_KEY) {
+                self.toggle_tooltip_key = Some(tooltip_toggle_key.clone());
+            }
+        }
+
+        if self.is_tooltip {
+            self.is_first_run = true;
+        }
+    }
+
+    fn setup_subscriptions(&self) {
+        set_selectable(false);
+
+        let events = if self.is_tooltip {
+            vec![
+                EventType::ModeUpdate,
+                EventType::TabUpdate,
+                EventType::PermissionRequestResult,
+                EventType::InitialKeybinds,
+            ]
+        } else {
+            vec![
+                EventType::TabUpdate,
+                EventType::PaneUpdate,
+                EventType::ModeUpdate,
+                EventType::Mouse,
+                EventType::CopyToClipboard,
+                EventType::InputReceived,
+                EventType::SystemClipboardFailure,
+                EventType::PermissionRequestResult,
+                EventType::InitialKeybinds,
+                EventType::Timer,
+            ]
+        };
+
+        subscribe(&events);
+
+        if !self.is_tooltip {
+            self.schedule_next_clock_update();
+        }
+    }
+
+    fn configure_keybinds(&self) {
+        if !self.is_tooltip && self.toggle_tooltip_key.is_some() {
+            if let Some(toggle_key) = &self.toggle_tooltip_key {
+                reconfigure(
+                    bind_toggle_key_config(toggle_key, self.own_client_id),
+                    false,
+                );
+            }
+        }
+    }
+
+    fn parse_bool_config(&self, key: &str, default: bool) -> bool {
+        self.config
+            .get(key)
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(default)
+    }
+
+    // Event handlers
+    fn handle_update_event(&mut self, event: Event) -> bool {
         self.is_first_run = false;
 
         match event {
@@ -127,96 +245,6 @@ impl ZellijPlugin for State {
         }
     }
 
-    fn pipe(&mut self, message: PipeMessage) -> bool {
-        if self.is_tooltip && message.is_private {
-            self.handle_tooltip_pipe(message);
-        } else if message.name == MSG_TOGGLE_TOOLTIP
-            && message.is_private
-            && self.toggle_tooltip_key.is_some()
-            // only launch once per plugin instance
-            && self.own_tab_index == Some(self.active_tab_idx.saturating_sub(1))
-            // only launch once per client of plugin instance
-            && Some(format!("{}", self.own_client_id)) == message.payload
-        {
-            self.toggle_persisted_tooltip(self.mode_info.mode);
-        }
-        false
-    }
-
-    fn render(&mut self, rows: usize, cols: usize) {
-        if self.is_tooltip {
-            self.render_tooltip(rows, cols);
-        } else {
-            self.render_tab_line(cols);
-        }
-    }
-}
-
-impl State {
-    fn initialize_configuration(&mut self, configuration: BTreeMap<String, String>) {
-        self.config = configuration.clone();
-        self.is_tooltip = self.parse_bool_config(CONFIG_IS_TOOLTIP, false);
-
-        if !self.is_tooltip {
-            if let Some(tooltip_toggle_key) = configuration.get(CONFIG_TOGGLE_TOOLTIP_KEY) {
-                self.toggle_tooltip_key = Some(tooltip_toggle_key.clone());
-            }
-        }
-
-        if self.is_tooltip {
-            self.is_first_run = true;
-        }
-    }
-
-    fn setup_subscriptions(&self) {
-        set_selectable(false);
-
-        let events = if self.is_tooltip {
-            vec![
-                EventType::ModeUpdate,
-                EventType::TabUpdate,
-                EventType::InitialKeybinds,
-            ]
-        } else {
-            vec![
-                EventType::TabUpdate,
-                EventType::PaneUpdate,
-                EventType::ModeUpdate,
-                EventType::Mouse,
-                EventType::CopyToClipboard,
-                EventType::InputReceived,
-                EventType::SystemClipboardFailure,
-                EventType::InitialKeybinds,
-                EventType::Timer,
-            ]
-        };
-
-        subscribe(&events);
-
-        if !self.is_tooltip {
-            self.schedule_next_clock_update();
-        }
-    }
-
-    fn configure_keybinds(&self) {
-        if !self.is_tooltip && self.toggle_tooltip_key.is_some() {
-            if let Some(toggle_key) = &self.toggle_tooltip_key {
-                reconfigure(
-                    bind_toggle_key_config(toggle_key, self.own_client_id),
-                    false,
-                );
-            }
-        }
-    }
-
-    fn parse_bool_config(&self, key: &str, default: bool) -> bool {
-        self.config
-            .get(key)
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(default)
-    }
-
-    // Event handlers
     fn handle_mode_update(&mut self, mode_info: ModeInfo) -> bool {
         let should_render = self.mode_info != mode_info;
         let old_mode = self.mode_info.mode;
